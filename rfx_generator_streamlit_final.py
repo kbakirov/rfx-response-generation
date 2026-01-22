@@ -16,6 +16,37 @@ st.set_page_config(
     layout="wide"
 )
 
+# API Key Configuration
+# Option 1: Store in Streamlit secrets (recommended for deployment)
+# Option 2: Use environment variable
+# Option 3: User input (fallback)
+def get_api_key():
+    """Get API key from various sources"""
+    # Try Streamlit secrets first (for Streamlit Cloud deployment)
+    try:
+        if hasattr(st, 'secrets') and 'ANTHROPIC_API_KEY' in st.secrets:
+            return st.secrets['ANTHROPIC_API_KEY']
+    except:
+        pass
+    
+    # Try environment variable
+    if 'ANTHROPIC_API_KEY' in os.environ:
+        return os.environ['ANTHROPIC_API_KEY']
+    
+    # Return None to prompt user input
+    return None
+
+def create_anthropic_client(api_key):
+    """Create Anthropic client with proper error handling"""
+    try:
+        # Simple initialization without extra parameters
+        client = anthropic.Anthropic(api_key=api_key)
+        return client
+    except Exception as e:
+        st.error(f"Failed to initialize Anthropic client: {str(e)}")
+        st.info("💡 Make sure your API key is correct and you have the latest anthropic package installed.")
+        return None
+
 # Initialize session state
 if 'step' not in st.session_state:
     st.session_state.step = 1
@@ -26,14 +57,14 @@ if 'generated_sections' not in st.session_state:
 
 # Sections configuration
 SECTIONS = [
-    {'key': 'executive_summary', 'label': 'Executive summary', 'icon': '📋'},
-    {'key': 'implementation_architecture', 'label': 'Implementation architecture', 'icon': '🏗️'},
-    {'key': 'team_members', 'label': 'Team composition', 'icon': '👥'},
-    {'key': 'cost_estimate', 'label': 'Cost estimate', 'icon': '💰'},
-    {'key': 'execution_plan', 'label': 'Execution plan', 'icon': '📅'},
-    {'key': 'timeline', 'label': 'Timeline and Milestones', 'icon': '⏱️'},
-    {'key': 'risks', 'label': 'Risk assessment', 'icon': '⚠️'},
-    {'key': 'assumptions', 'label': 'Assumptions and Dependencies', 'icon': '📌'},
+    {'key': 'executive_summary', 'label': 'Executive Summary', 'icon': '📋'},
+    {'key': 'implementation_architecture', 'label': 'Implementation Architecture', 'icon': '🏗️'},
+    {'key': 'team_members', 'label': 'Team Composition', 'icon': '👥'},
+    {'key': 'cost_estimate', 'label': 'Cost Estimate', 'icon': '💰'},
+    {'key': 'execution_plan', 'label': 'Execution Plan', 'icon': '📅'},
+    {'key': 'timeline', 'label': 'Timeline & Milestones', 'icon': '⏱️'},
+    {'key': 'risks', 'label': 'Risk Assessment', 'icon': '⚠️'},
+    {'key': 'assumptions', 'label': 'Assumptions & Dependencies', 'icon': '📌'},
     {'key': 'deliverables', 'label': 'Deliverables', 'icon': '✅'},
     {'key': 'conclusion', 'label': 'Conclusion', 'icon': '🎯'}
 ]
@@ -348,10 +379,10 @@ def create_docx_document(rfx_data, sections_content):
     footer_heading = doc.add_heading('Contact Information', 1)
     footer_para = doc.add_paragraph()
     footer_para.add_run('For questions or clarifications regarding this proposal, please contact:\n\n')
-    footer_para.add_run('Itransition\n').bold = True
-    footer_para.add_run('Email: sales@itransition.com\n')
+    footer_para.add_run('Your Company Name\n').bold = True
+    footer_para.add_run('Email: proposals@yourcompany.com\n')
     footer_para.add_run('Phone: +1 (555) 123-4567\n')
-    footer_para.add_run('Website: www.itransition.com')
+    footer_para.add_run('Website: www.yourcompany.com')
     
     footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer_para.paragraph_format.space_before = Pt(24)
@@ -408,8 +439,8 @@ def convert_docx_to_pdf(docx_filename):
 LIBREOFFICE_AVAILABLE = check_libreoffice_installed()
 
 # Header
-st.title("🚀 RFX response generator")
-st.markdown("### AI-Powered proposal creation for Itransition projects")
+st.title("🚀 RFX Response Generator")
+st.markdown("### AI-Powered Proposal Creation for IT Consulting Projects")
 st.divider()
 
 # Progress indicator
@@ -525,25 +556,39 @@ elif st.session_state.step == 2:
             st.rerun()
     
     with col2:
-        # API Key input
-        api_key = st.text_input("Anthropic API Key (optional - app handles this)", type="password",
-                               help="In production, this would be handled securely on the backend")
+        # API Key input - check if already configured
+        stored_api_key = get_api_key()
         
-        api_key = "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"
+        if stored_api_key:
+            st.success("✅ API Key configured (using Streamlit secrets or environment variable)")
+            api_key_to_use = stored_api_key
+            show_input = False
+        else:
+            api_key_to_use = st.text_input(
+                "Anthropic API Key", 
+                type="password",
+                help="Enter your Anthropic API key. Get one at https://console.anthropic.com/",
+                key="api_key_input"
+            )
+            show_input = True
+        
         if st.button("🎯 Generate RFX Response", type="primary"):
-            if not api_key:
-                st.info("ℹ️ In production deployment, the API key would be securely stored on the server. For demo purposes, please provide your Anthropic API key.")
+            if not api_key_to_use:
+                st.error("❌ Please provide your Anthropic API key to generate content.")
+                st.info("💡 Get your API key at https://console.anthropic.com/")
             else:
                 with st.spinner("Generating sections in parallel... This will take 30-60 seconds..."):
                     try:
-                        client = anthropic.Anthropic(api_key=api_key)
-                        sections_content = generate_all_sections(client, st.session_state.rfx_data)
-                        st.session_state.generated_sections = sections_content
-                        st.session_state.step = 3
-                        st.success("✅ All sections generated successfully!")
-                        st.rerun()
+                        client = create_anthropic_client(api_key_to_use)
+                        if client:
+                            sections_content = generate_all_sections(client, st.session_state.rfx_data)
+                            st.session_state.generated_sections = sections_content
+                            st.session_state.step = 3
+                            st.success("✅ All sections generated successfully!")
+                            st.rerun()
                     except Exception as e:
                         st.error(f"Error: {str(e)}")
+                        st.info("💡 Check your API key and internet connection. Visit https://console.anthropic.com/ to verify your key.")
 
 # Step 3: Review & Export
 elif st.session_state.step == 3:
@@ -696,7 +741,7 @@ elif st.session_state.step == 3:
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: gray; padding: 20px;'>
-    <p>Powered by Claude AI • Built for Itransition Excellence</p>
+    <p>Powered by Claude AI • Built for IT Consulting Excellence</p>
     <p style='font-size: 0.8em;'>© 2026 RFX Response Generator</p>
 </div>
 """, unsafe_allow_html=True)

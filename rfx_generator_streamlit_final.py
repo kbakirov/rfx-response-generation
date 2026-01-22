@@ -415,10 +415,10 @@ def create_docx_document(rfx_data, sections_content):
     footer_heading = doc.add_heading('Contact Information', 1)
     footer_para = doc.add_paragraph()
     footer_para.add_run('For questions or clarifications regarding this proposal, please contact:\n\n')
-    footer_para.add_run('Your Company Name\n').bold = True
-    footer_para.add_run('Email: proposals@yourcompany.com\n')
+    footer_para.add_run('Itransition\n').bold = True
+    footer_para.add_run('Email: proposals@itransition.com\n')
     footer_para.add_run('Phone: +1 (555) 123-4567\n')
-    footer_para.add_run('Website: www.yourcompany.com')
+    footer_para.add_run('Website: www.itransition.com')
     
     footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer_para.paragraph_format.space_before = Pt(24)
@@ -840,7 +840,7 @@ elif st.session_state.step == 3:
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: gray; padding: 20px;'>
-    <p>Powered by Claude AI • Built for IT Consulting Excellence</p>
+    <p>Powered by Claude AI • Built for Itransition Excellence</p>
     <p style='font-size: 0.8em;'>© 2026 RFX Response Generator</p>
 </div>
 """, unsafe_allow_html=True)

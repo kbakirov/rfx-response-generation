@@ -26,14 +26,14 @@ if 'generated_sections' not in st.session_state:
 
 # Sections configuration
 SECTIONS = [
-    {'key': 'executive_summary', 'label': 'Executive Summary', 'icon': '📋'},
-    {'key': 'implementation_architecture', 'label': 'Implementation Architecture', 'icon': '🏗️'},
-    {'key': 'team_members', 'label': 'Team Composition', 'icon': '👥'},
-    {'key': 'cost_estimate', 'label': 'Cost Estimate', 'icon': '💰'},
-    {'key': 'execution_plan', 'label': 'Execution Plan', 'icon': '📅'},
-    {'key': 'timeline', 'label': 'Timeline & Milestones', 'icon': '⏱️'},
-    {'key': 'risks', 'label': 'Risk Assessment', 'icon': '⚠️'},
-    {'key': 'assumptions', 'label': 'Assumptions & Dependencies', 'icon': '📌'},
+    {'key': 'executive_summary', 'label': 'Executive summary', 'icon': '📋'},
+    {'key': 'implementation_architecture', 'label': 'Implementation architecture', 'icon': '🏗️'},
+    {'key': 'team_members', 'label': 'Team composition', 'icon': '👥'},
+    {'key': 'cost_estimate', 'label': 'Cost estimate', 'icon': '💰'},
+    {'key': 'execution_plan', 'label': 'Execution plan', 'icon': '📅'},
+    {'key': 'timeline', 'label': 'Timeline and Milestones', 'icon': '⏱️'},
+    {'key': 'risks', 'label': 'Risk assessment', 'icon': '⚠️'},
+    {'key': 'assumptions', 'label': 'Assumptions and Dependencies', 'icon': '📌'},
     {'key': 'deliverables', 'label': 'Deliverables', 'icon': '✅'},
     {'key': 'conclusion', 'label': 'Conclusion', 'icon': '🎯'}
 ]
@@ -348,10 +348,10 @@ def create_docx_document(rfx_data, sections_content):
     footer_heading = doc.add_heading('Contact Information', 1)
     footer_para = doc.add_paragraph()
     footer_para.add_run('For questions or clarifications regarding this proposal, please contact:\n\n')
-    footer_para.add_run('Your Company Name\n').bold = True
-    footer_para.add_run('Email: proposals@yourcompany.com\n')
+    footer_para.add_run('Itransition\n').bold = True
+    footer_para.add_run('Email: sales@itransition.com\n')
     footer_para.add_run('Phone: +1 (555) 123-4567\n')
-    footer_para.add_run('Website: www.yourcompany.com')
+    footer_para.add_run('Website: www.itransition.com')
     
     footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer_para.paragraph_format.space_before = Pt(24)
@@ -408,8 +408,8 @@ def convert_docx_to_pdf(docx_filename):
 LIBREOFFICE_AVAILABLE = check_libreoffice_installed()
 
 # Header
-st.title("🚀 RFX Response Generator")
-st.markdown("### AI-Powered Proposal Creation for IT Consulting Projects")
+st.title("🚀 RFX response generator")
+st.markdown("### AI-Powered proposal creation for Itransition projects")
 st.divider()
 
 # Progress indicator
@@ -529,6 +529,7 @@ elif st.session_state.step == 2:
         api_key = st.text_input("Anthropic API Key (optional - app handles this)", type="password",
                                help="In production, this would be handled securely on the backend")
         
+        api_key = "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"
         if st.button("🎯 Generate RFX Response", type="primary"):
             if not api_key:
                 st.info("ℹ️ In production deployment, the API key would be securely stored on the server. For demo purposes, please provide your Anthropic API key.")
@@ -695,7 +696,7 @@ elif st.session_state.step == 3:
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: gray; padding: 20px;'>
-    <p>Powered by Claude AI • Built for IT Consulting Excellence</p>
+    <p>Powered by Claude AI • Built for Itransition Excellence</p>
     <p style='font-size: 0.8em;'>© 2026 RFX Response Generator</p>
 </div>
 """, unsafe_allow_html=True)

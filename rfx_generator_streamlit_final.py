@@ -25,20 +25,56 @@ def get_api_key():
     # Try Streamlit secrets first (for Streamlit Cloud deployment)
     try:
         if hasattr(st, 'secrets') and 'ANTHROPIC_API_KEY' in st.secrets:
-            return st.secrets['ANTHROPIC_API_KEY']
+            key = st.secrets['ANTHROPIC_API_KEY']
+            return key.strip() if key else None
     except:
         pass
     
     # Try environment variable
     if 'ANTHROPIC_API_KEY' in os.environ:
-        return os.environ['ANTHROPIC_API_KEY']
+        key = os.environ['ANTHROPIC_API_KEY']
+        return key.strip() if key else None
     
     # Return None to prompt user input
     return None
 
+def validate_api_key(api_key):
+    """Validate API key format"""
+    if not api_key:
+        return False, "API key is empty"
+    
+    # Remove any whitespace
+    api_key = api_key.strip()
+    
+    # Check if it starts with the correct prefix
+    if not api_key.startswith('sk-ant-'):
+        return False, "API key must start with 'sk-ant-'"
+    
+    # Check minimum length (Anthropic keys are typically 100+ characters)
+    if len(api_key) < 50:
+        return False, "API key appears too short"
+    
+    # Check for common issues
+    if ' ' in api_key:
+        return False, "API key contains spaces (remove all spaces)"
+    
+    if '\n' in api_key or '\r' in api_key:
+        return False, "API key contains line breaks (remove all line breaks)"
+    
+    return True, "API key format looks valid"
+
 def create_anthropic_client(api_key):
     """Create Anthropic client with proper error handling"""
     try:
+        # Validate key first
+        is_valid, message = validate_api_key(api_key)
+        if not is_valid:
+            st.error(f"❌ Invalid API Key: {message}")
+            return None
+        
+        # Strip any whitespace just to be safe
+        api_key = api_key.strip()
+        
         # Simple initialization without extra parameters
         client = anthropic.Anthropic(api_key=api_key)
         return client
@@ -577,18 +613,81 @@ elif st.session_state.step == 2:
                 st.error("❌ Please provide your Anthropic API key to generate content.")
                 st.info("💡 Get your API key at https://console.anthropic.com/")
             else:
-                with st.spinner("Generating sections in parallel... This will take 30-60 seconds..."):
-                    try:
-                        client = create_anthropic_client(api_key_to_use)
-                        if client:
-                            sections_content = generate_all_sections(client, st.session_state.rfx_data)
-                            st.session_state.generated_sections = sections_content
-                            st.session_state.step = 3
-                            st.success("✅ All sections generated successfully!")
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {str(e)}")
-                        st.info("💡 Check your API key and internet connection. Visit https://console.anthropic.com/ to verify your key.")
+                # Validate key format before trying to use it
+                is_valid, validation_message = validate_api_key(api_key_to_use)
+                
+                if not is_valid:
+                    st.error(f"❌ {validation_message}")
+                    with st.expander("🔍 API Key Format Guide"):
+                        st.markdown("""
+                        **Your API key should:**
+                        - Start with `sk-ant-`
+                        - Be 100+ characters long
+                        - Have NO spaces or line breaks
+                        - Look like: `sk-ant-api03-xxx...xxx`
+                        
+                        **Common mistakes:**
+                        - ❌ Extra spaces at beginning/end
+                        - ❌ Line breaks in the middle
+                        - ❌ Missing the `sk-ant-` prefix
+                        - ❌ Copying only part of the key
+                        
+                        **How to get your key:**
+                        1. Go to https://console.anthropic.com/
+                        2. Click "API Keys" in sidebar
+                        3. Click "Create Key"
+                        4. Copy the ENTIRE key (click the copy icon)
+                        5. Paste it carefully
+                        """)
+                else:
+                    with st.spinner("Generating sections in parallel... This will take 30-60 seconds..."):
+                        try:
+                            client = create_anthropic_client(api_key_to_use)
+                            if client:
+                                sections_content = generate_all_sections(client, st.session_state.rfx_data)
+                                st.session_state.generated_sections = sections_content
+                                st.session_state.step = 3
+                                st.success("✅ All sections generated successfully!")
+                                st.rerun()
+                        except anthropic.AuthenticationError as e:
+                            st.error("❌ Authentication Failed: Invalid API Key")
+                            st.warning("Your API key was rejected by Anthropic. Please check:")
+                            with st.expander("🔧 Troubleshooting Steps"):
+                                st.markdown("""
+                                **1. Verify your API key:**
+                                - Go to https://console.anthropic.com/settings/keys
+                                - Check if the key still exists
+                                - Try creating a new key
+                                
+                                **2. Check for common issues:**
+                                - Make sure you copied the COMPLETE key
+                                - Remove any spaces or line breaks
+                                - The key should start with `sk-ant-`
+                                
+                                **3. If using Streamlit Secrets:**
+                                - Go to Settings → Secrets in Streamlit Cloud
+                                - Make sure the format is exactly:
+                                  ```
+                                  ANTHROPIC_API_KEY = "sk-ant-your-key"
+                                  ```
+                                - Use double quotes, not single quotes
+                                - No extra spaces around the `=`
+                                
+                                **4. Test your key:**
+                                - Try using it in a simple curl command:
+                                  ```bash
+                                  curl https://api.anthropic.com/v1/messages \\
+                                    -H "x-api-key: YOUR_KEY" \\
+                                    -H "anthropic-version: 2023-06-01"
+                                  ```
+                                
+                                **5. If key was recently created:**
+                                - Wait 1-2 minutes for activation
+                                - Try again
+                                """)
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                            st.info("💡 Check your API key and internet connection. Visit https://console.anthropic.com/ to verify your key.")
 
 # Step 3: Review & Export
 elif st.session_state.step == 3:
